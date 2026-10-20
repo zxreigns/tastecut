@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TasteCut — a brand walks in, a brief that knows what they love walks out</title>
+<meta name="description" content="TasteCut is an agent for video editors. It reads a brand's audience on Qloo's taste graph and cuts it into an edit brief: pacing, typography, colour grade, music direction and references — every line backed by real affinities.">
+<meta property="og:title" content="TasteCut — edit briefs with taste">
+<meta property="og:description" content="Type a brand. Get a culturally grounded edit brief: cuts per minute, type, grade, music, references — from Qloo's taste graph, not vibes.">
+<meta property="og:image" content="/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<header class="top">
+  <a class="wordmark" href="/"><span class="wm-taste">Taste</span><span class="wm-cut">Cut</span></a>
+  <nav class="topnav">
+    <a href="#how">how it works</a>
+    <a href="#why">why qloo</a>
+    <a href="https://github.com/zxreigns/tastecut" target="_blank" rel="noopener">source</a>
+    <span class="rec" id="rec"><i></i><span id="rec-label">agent idle</span></span>
+  </nav>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <p class="kicker mono">BRIEF · V1 · <span id="hero-tc">00:00:00</span></p>
+    <h1>A brand walks in.<br>A brief that <em>knows what they love</em> walks out.</h1>
+    <p class="lede">TasteCut is an agent for video editors. It reads a brand's audience on Qloo's taste graph — what that audience actually watches, hears and buys, with an affinity score on every name — and cuts it into a working edit brief: pacing, type, grade, music, references. Numbers with evidence, not vibes.</p>
+  </section>
+
+  <section class="slate" id="slate" aria-label="Brief request">
+    <div class="slate-head">
+      <span class="mono">SLATE</span><span class="mono dim">SCENE 01 · TAKE <span id="take">1</span></span>
+    </div>
+    <form id="form" autocomplete="off">
+      <label class="field big">
+        <span class="lab">Brand or client</span>
+        <input id="brand" name="brand" type="text" placeholder="Nike, Aesop, Liquid Death, your local coffee roaster…" maxlength="120" required>
+      </label>
+      <label class="field">
+        <span class="lab">Notes <span class="dim">optional — product, campaign, audience, anything you know</span></span>
+        <textarea id="notes" name="notes" rows="2" maxlength="1200" placeholder="launch film for a running shoe, Lagos + London, skews 18-24, no voiceover"></textarea>
+      </label>
+      <div class="field">
+        <span class="lab">Deliverable</span>
+        <div class="chips" id="deliverables" role="radiogroup"></div>
+      </div>
+      <label class="field">
+        <span class="lab">Your reel <span class="dim">optional — 2-6 films, artists or brands that define your cutting style; unlocks the match score</span></span>
+        <input id="reel" name="reel" type="text" maxlength="300" placeholder="Blade Runner 2049, Frank Ocean, Euphoria, Nike">
+      </label>
+      <div class="actions">
+        <button class="btn primary" id="go" type="submit"><span>Cut the brief</span><kbd class="mono">⏎</kbd></button>
+        <div class="samples mono"><span class="dim">try</span> <button type="button" data-sample="Nike">Nike</button><button type="button" data-sample="Aesop">Aesop</button><button type="button" data-sample="Red Bull">Red Bull</button><button type="button" data-sample="Glossier">Glossier</button><button type="button" data-sample="Patagonia">Patagonia</button><button type="button" data-sample="Liquid Death">Liquid Death</button><button type="button" data-sample="Monzo">Monzo</button></div>
+      </div>
+    </form>
+  </section>
+
+  <section class="room hidden" id="room">
+    <aside class="console" id="console" aria-live="polite">
+      <div class="console-head"><span class="mono">SCRIPT SUPERVISOR</span><span class="mono dim" id="console-status">standing by</span></div>
+      <ol class="log" id="log"></ol>
+      <div class="writing hidden" id="writing"><span class="mono dim">writing</span><span class="mono" id="writing-chars">0</span><pre id="writing-tail"></pre></div>
+    </aside>
+
+    <article class="brief hidden" id="brief">
+      <header class="brief-head">
+        <div class="brand-card" id="brand-card"></div>
+        <div class="brief-title">
+          <p class="kicker mono" id="brief-kicker"></p>
+          <h2 id="headline"></h2>
+          <p class="positioning" id="positioning"></p>
+          <p class="confidence mono" id="confidence"></p>
+        </div>
+      </header>
+
+      <section class="timeline-wrap" id="timeline-wrap">
+        <div class="tl-head"><span class="mono">TIMELINE</span><span class="mono dim" id="tl-meta"></span></div>
+        <div class="timeline" id="timeline"></div>
+        <p class="tl-note" id="tl-note"></p>
+      </section>
+
+      <div class="grid">
+        <section class="card" id="c-audience"><h3><span class="num mono">01</span> Audience</h3><div class="body" id="audience"></div></section>
+        <section class="card" id="c-taste"><h3><span class="num mono">02</span> Taste map</h3><div class="body" id="taste"></div></section>
+        <section class="card wide" id="c-style"><h3><span class="num mono">03</span> Edit style &amp; pacing</h3><div class="body" id="style"></div></section>
+        <section class="card" id="c-type"><h3><span class="num mono">04</span> Typography</h3><div class="body" id="type"></div></section>
+        <section class="card" id="c-grade"><h3><span class="num mono">05</span> Colour grade</h3><div class="body" id="grade"></div></section>
+        <section class="card wide" id="c-music"><h3><span class="num mono">06</span> Music direction</h3><div class="body" id="music"></div></section>
+        <section class="card wide" id="c-refs"><h3><span class="num mono">07</span> References</h3><div class="body" id="refs"></div></section>
+        <section class="card" id="c-do"><h3><span class="num mono">08</span> Do / Don't</h3><div class="body" id="dodont"></div></section>
+        <section class="card" id="c-sound"><h3><span class="num mono">09</span> Sound design</h3><div class="body" id="sound"></div></section>
+        <section class="card wide" id="c-match"><h3><span class="num mono">10</span> Match score <span class="dim">your reel vs this brand</span></h3><div class="body" id="match"></div></section>
+        <section class="card wide" id="c-why"><h3><span class="num mono">11</span> Why Qloo <span class="dim">the same brief, guessed by the model alone</span></h3><div class="body" id="why"></div></section>
+        <section class="card wide" id="c-evidence"><h3><span class="num mono">12</span> Evidence trail</h3><div class="body" id="evidence"></div></section>
+      </div>
+
+      <footer class="brief-foot">
+        <button class="btn" id="copy-md">Copy as Markdown</button>
+        <button class="btn" id="print">Print / PDF</button>
+        <button class="btn" id="share">Copy share link</button>
+        <span class="mono dim" id="brief-stats"></span>
+      </footer>
+    </article>
+  </section>
+
+  <section class="how" id="how">
+    <h2>How the agent works</h2>
+    <ol class="steps">
+      <li><span class="mono">01 READ</span> A small model reads your slate: cleans the brand name, guesses the category, lists proxy brands in case the client is too small for the graph.</li>
+      <li><span class="mono">02 RESOLVE</span> <code>GET /search</code> on Qloo finds the brand entity; if it isn't there, the agent grounds through its cultural neighbours instead.</li>
+      <li><span class="mono">03 GRAPH</span> Seven parallel <code>/v2/insights</code> calls: demographics, taste tags, artists, films, TV, neighbouring brands, podcasts — each with affinity scores.</li>
+      <li><span class="mono">04 DERIVE</span> No model here. Genre tags map to a tempo index → cuts per minute and average shot length; tags pre-score 13 colour grades and 14 type pairings; artist genres set the BPM window.</li>
+      <li><span class="mono">05 WRITE</span> Two writers run in parallel on the evidence and return the brief as structured JSON, each section naming the affinities that drove it.</li>
+      <li><span class="mono">06 MATCH</span> Your reel is resolved on the graph and compared with the brand across artists, films, TV, brands and taste tags — weighted-Jaccard overlap → a score you can argue with.</li>
+    </ol>
+  </section>
+
+  <section class="whysec" id="why">
+    <h2>Why this only works with Qloo</h2>
+    <p>Ask a language model what Aesop's audience listens to and it will guess from the brand's own marketing. Qloo's taste graph knows what that audience actually over-indexes on — across music, film, TV, podcasts and other brands — with an affinity score for each. TasteCut turns those numbers into craft decisions an editor can act on in the next hour, and the <em>Why Qloo</em> card shows the model-only guess next to the grounded brief so you can see the difference yourself.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Built for the Qloo Agentic Hackathon by <a href="https://x.com/musepriest" target="_blank" rel="noopener">Muse</a> (Matthew Ifeanyi).</span>
+  <span class="mono dim">Qloo Taste AI · Cloudflare Workers AI · no framework</span>
+</footer>
+<script src="/app.js" type="module"></script>
+</body>
+</html>
