@@ -6,6 +6,8 @@ TasteCut is an agent for video editors. Give it a brand (and optionally the deli
 
 Live: **https://tastecut-5eo.pages.dev**
 
+![TasteCut brief](docs/brief.jpg)
+
 Built for the Qloo Agentic Hackathon (October 2026) by Matthew Ifeanyi ([@zxreigns](https://github.com/zxreigns)).
 
 ---
