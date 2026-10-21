@@ -58,6 +58,7 @@ The brief is rendered the way an editor thinks: a filmstrip of the deliverable w
 - One Cloudflare Pages project: static `site/` + an advanced-mode `worker/_worker.js` (no framework, no build step).
 - Models on Workers AI: a small instruct model for the READ step, a 70B instruct model for the two writers and the baseline.
 - Briefs are cached at the edge for 24 h per (brand, notes, deliverable) and shareable by URL (`/?b=<id>`).
+- The hackathon key allows 10 Qloo requests per second, and one brief fans out about 7 calls in parallel. The worker caps in-flight Qloo calls, retries 429s with jittered backoff, and edge-caches successful Qloo responses for a day, so several people can run briefs at once.
 - Markdown export, print-to-PDF, share link.
 
 ## Run it yourself
@@ -75,7 +76,6 @@ Environment (Pages project → Settings → Environment variables / bindings):
 | `QLOO_API_KEY` | your hackathon key (secret) |
 | `QLOO_BASE` | `https://hackathon.api.qloo.com` (default) |
 | `AI` | Workers AI binding |
-| `QLOO_MOCK` | `1` only for local UI work without a key — never in production |
 
 API:
 

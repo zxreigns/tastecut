@@ -5,7 +5,7 @@
 const QLOO_BASE = "https://hackathon.api.qloo.com";
 const MODEL_MAIN = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MODEL_SMALL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const VERSION = "0.9.15";
+const VERSION = "0.9.19";
 
 // ---------- craft knowledge (deterministic, explainable) ----------
 // tempo weights: 0 = glacial, 1 = frantic. Keys are matched as substrings of Qloo tag ids/names (lowercase).
@@ -98,42 +98,30 @@ function repairJson(t) {
 }
 
 
-// ---------- DEV ONLY: mock Qloo (env.QLOO_MOCK="1") — removed before submission ----------
-const MOCK = {
-  brand: (name) => ({ entity_id: "mock-" + name.toLowerCase().replace(/\W+/g, "-"), name, subtype: "urn:entity:brand", popularity: 0.97, properties: { description: name + " is a globally known brand (mock entity).", image: { url: "" } }, tags: [{ id: "urn:tag:genre:brand:sportswear", name: "Sportswear", type: "urn:tag:genre:brand" }, { id: "urn:tag:keyword:brand:performance", name: "Performance", type: "urn:tag:keyword:brand" }] }),
-  artists: [["Travis Scott", "Hip Hop", 0.93], ["Drake", "Hip Hop", 0.9], ["Kendrick Lamar", "Hip Hop", 0.88], ["Billie Eilish", "Pop", 0.8], ["The Weeknd", "R&B", 0.84], ["Bad Bunny", "Reggaeton", 0.82], ["Dua Lipa", "Pop", 0.74], ["Metro Boomin", "Trap", 0.79], ["Fred again..", "Electronic", 0.7], ["Burna Boy", "Afrobeats", 0.76], ["SZA", "R&B", 0.72], ["Tyler, the Creator", "Hip Hop", 0.81]],
-  movies: [["Creed", 2015, "Drama/Sports", 0.9], ["Top Gun: Maverick", 2022, "Action", 0.88], ["Spider-Man: Into the Spider-Verse", 2018, "Animation", 0.85], ["John Wick", 2014, "Action", 0.8], ["Air", 2023, "Drama", 0.86], ["Baby Driver", 2017, "Action/Music", 0.74], ["The Social Network", 2010, "Drama", 0.7], ["Uncut Gems", 2019, "Thriller", 0.72]],
-  tv: [["The Last Dance", 2020, "Documentary/Sports", 0.93], ["Euphoria", 2019, "Drama", 0.79], ["Ted Lasso", 2020, "Comedy/Sports", 0.76], ["Atlanta", 2016, "Comedy/Drama", 0.78], ["Drive to Survive", 2019, "Documentary/Sports", 0.8], ["Abbott Elementary", 2021, "Comedy", 0.6]],
-  brands: [["Jordan", 0.95], ["Adidas", 0.9], ["New Balance", 0.82], ["Supreme", 0.8], ["Red Bull", 0.77], ["Beats by Dre", 0.76], ["Gatorade", 0.74], ["Spotify", 0.7], ["Apple", 0.69], ["Stüssy", 0.66]],
-  podcasts: [["The Joe Budden Podcast", 0.7], ["New Heights", 0.72], ["The Pivot Podcast", 0.68], ["Call Her Daddy", 0.6], ["The Bill Simmons Podcast", 0.64]],
-  tags: [["Athletic", "urn:tag:keyword:brand", 0.9], ["Hip Hop", "urn:tag:genre:music", 0.88], ["Action", "urn:tag:genre:media", 0.84], ["Streetwear", "urn:tag:keyword:brand", 0.83], ["Sports", "urn:tag:genre:media", 0.82], ["Trap", "urn:tag:genre:music", 0.7], ["Documentary", "urn:tag:genre:media", 0.66], ["R&B", "urn:tag:genre:music", 0.64], ["Pop", "urn:tag:genre:music", 0.6], ["Animation", "urn:tag:genre:media", 0.58], ["Gen Z", "urn:tag:audience", 0.75], ["Fitness", "urn:tag:keyword:brand", 0.8], ["Comedy", "urn:tag:genre:media", 0.55], ["Electronic", "urn:tag:genre:music", 0.5]],
-  demo: { age: { "24_and_younger": 0.41, "25_to_29": 0.33, "30_to_34": 0.12, "35_to_44": -0.08, "45_to_54": -0.3, "55_and_older": -0.44 }, gender: { male: 0.14, female: -0.14 } }
-};
-const mkTag = (name, type) => ({ id: type + ":" + name.toLowerCase().replace(/[^a-z0-9]+/g, "_"), name, type });
-function mockFetch(url) {
-  const u = new URL(url); const p = u.searchParams; const path = u.pathname;
-  const img = (n) => "https://images.qloo.com/mock/" + encodeURIComponent(n) + ".jpg";
-  let body = { success: true, results: {} };
-  if (path === "/search") {
-    const qn = p.get("query") || ""; const types = p.get("types") || "";
-    if (/^(zzz|unknownbrand)/i.test(qn)) body.results = [];
-    else if (types.includes("brand") || !types) body.results = [MOCK.brand(qn.replace(/\b\w/g, c => c.toUpperCase()))];
-    else { const t = types.split(",")[0]; body.results = [{ entity_id: "mock-" + qn.toLowerCase().replace(/\W+/g, "-"), name: qn, subtype: t, popularity: 0.8, properties: {}, tags: [] }]; }
-  } else if (path === "/v2/insights") {
-    const ft = p.get("filter.type"); const take = Number(p.get("take") || 10);
-    const ent = (rows, subtype, map) => rows.slice(0, take).map(map).map((e, i) => ({ ...e, entity_id: "mock-" + subtype + "-" + i, subtype, query: { affinity: e.aff }, properties: { image: { url: img(e.name) }, release_year: e.year, description: "" } }));
-    if (ft === "urn:entity:artist") body.results.entities = ent(MOCK.artists, "urn:entity:artist", ([name, g, aff]) => ({ name, aff, tags: [mkTag(g, "urn:tag:genre:music")] }));
-    else if (ft === "urn:entity:movie") body.results.entities = ent(MOCK.movies, "urn:entity:movie", ([name, year, g, aff]) => ({ name, year, aff, tags: g.split("/").map(x => mkTag(x, "urn:tag:genre:media")) }));
-    else if (ft === "urn:entity:tv_show") body.results.entities = ent(MOCK.tv, "urn:entity:tv_show", ([name, year, g, aff]) => ({ name, year, aff, tags: g.split("/").map(x => mkTag(x, "urn:tag:genre:media")) }));
-    else if (ft === "urn:entity:brand") body.results.entities = ent(MOCK.brands, "urn:entity:brand", ([name, aff]) => ({ name, aff, tags: [] }));
-    else if (ft === "urn:entity:podcast") body.results.entities = ent(MOCK.podcasts, "urn:entity:podcast", ([name, aff]) => ({ name, aff, tags: [] }));
-    else if (ft === "urn:tag") body.results.tags = MOCK.tags.slice(0, take).map(([name, type, aff]) => ({ ...mkTag(name, type), tag_id: mkTag(name, type).id, subtype: type, query: { affinity: aff } }));
-    else if (ft === "urn:demographics") body.results.demographics = (p.get("signal.interests.entities") || "x").split(",").map(id => ({ entity_id: id, query: MOCK.demo }));
-  } else if (path === "/v2/analysis/compare") { body = { success: false, error: "compare not available in mock" }; return new Response(JSON.stringify(body), { status: 404 }); }
-  return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
-}
-
 // ---------- Qloo client ----------
+// The hackathon key allows 10 requests/second. One brief fans out ~7 parallel calls, so concurrent users
+// can trip the limit: cap in-flight calls per isolate, retry 429s with jittered backoff, and edge-cache
+// successful GETs for a day (taste graphs don't move minute to minute).
+const QLOO_MAX_INFLIGHT = 4;
+let qlooInflight = 0; const qlooWaiters = [];
+async function qlooSlot() { if (qlooInflight < QLOO_MAX_INFLIGHT) { qlooInflight++; return; } await new Promise(r => qlooWaiters.push(r)); qlooInflight++; }
+function qlooRelease() { qlooInflight--; const w = qlooWaiters.shift(); if (w) w(); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function qlooFetch(url, key, onRetry) {
+  const cache = typeof caches !== "undefined" ? caches.default : null;
+  const ck = new Request("https://qloo-cache.tastecut/" + encodeURIComponent(url));
+  if (cache) { try { const hit = await cache.match(ck); if (hit) return { res: { status: 200, cached: true }, body: await hit.json() }; } catch {} }
+  let res, body;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await qlooSlot();
+    try { res = await fetch(url, { headers: { "X-Api-Key": key, accept: "application/json" } }); body = await res.json().catch(() => ({})); }
+    finally { qlooRelease(); }
+    if (res.status !== 429 && res.status < 500) break;
+    if (attempt < 4) { onRetry && onRetry(attempt); await sleep(350 * 2 ** attempt + Math.random() * 400); }
+  }
+  if (res.status === 200 && cache) { try { await cache.put(ck, new Response(JSON.stringify(body), { headers: { "content-type": "application/json", "cache-control": "public, max-age=86400" } })); } catch {} }
+  return { res, body };
+}
 class Qloo {
   constructor(key, trace) { this.key = key; this.trace = trace; this.calls = 0; }
   async get(path, params, label) {
@@ -143,12 +131,12 @@ class Qloo {
     const shown = path + "?" + decodeURIComponent(url.searchParams.toString()).replace(/urn:entity:/g, "urn:entity:");
     let res, body;
     try {
-      res = this.key === "mock" ? mockFetch(url.toString()) : await fetch(url.toString(), { headers: { "X-Api-Key": this.key, accept: "application/json" } });
-      body = await res.json().catch(() => ({}));
+      ({ res, body } = await qlooFetch(url.toString(), this.key, () => { this.retries = (this.retries || 0) + 1; }));
     } catch (e) { body = { error: String(e) }; res = { status: 0 }; }
     const ms = Date.now() - t0;
     const rec = { call: "GET " + shown, status: res.status, ms, label };
-    if (res.status !== 200) rec.error = (body && (body.message || body.error || JSON.stringify(body).slice(0, 200))) || "error";
+    if (res.cached) rec.cached = true;
+    if (res.status !== 200) rec.error = (body && (body.error_msg || body.message || body.error || JSON.stringify(body).slice(0, 200))) || "error";
     this.trace && this.trace(rec);
     if (res.status !== 200) throw Object.assign(new Error(`Qloo ${res.status} on ${path}: ${rec.error}`), { status: res.status, body });
     return body;
@@ -175,7 +163,7 @@ function slimEntity(e) {
   const props = e.properties || {};
   const tags = (e.tags || []).map(slimTag).filter(t => t && !/streaming_service|website|wikipedia|akas/.test(t.type || ""));
   return {
-    id: e.entity_id || e.id, name: e.name, subtype: e.subtype || e.type, popularity: e.popularity != null ? round(e.popularity, 3) : null,
+    id: e.entity_id || e.id, name: e.name, subtype: e.subtype || (Array.isArray(e.types) && e.types[0]) || e.type, popularity: e.popularity != null ? round(e.popularity, 3) : null,
     affinity: e.query && e.query.affinity != null ? round(e.query.affinity, 3) : null,
     image: props.image && props.image.url ? props.image.url : null,
     description: props.description || props.short_description || null,
@@ -185,7 +173,9 @@ function slimEntity(e) {
     explain: e.query && e.query.explainability ? e.query.explainability : null
   };
 }
-function slimTag(t) { if (!t) return null; return { id: t.id || t.tag_id, name: t.name, type: t.type || t.subtype || null, affinity: t.query && t.query.affinity != null ? round(t.query.affinity, 3) : null }; }
+const tidyName = (n) => typeof n === "string" ? n.replace(/\s+/g, " ").replace(/\s*-\s*/g, "-").trim() : n;
+function mergeHits(hits) { const m = new Map(); for (const h of hits || []) { const k = lc(h.tag || ""); const o = m.get(k); if (o) o.weight = round(o.weight + h.weight, 2); else m.set(k, { ...h }); } return [...m.values()].sort((a, b) => b.weight - a.weight); }
+function slimTag(t) { if (!t) return null; return { id: t.id || t.tag_id, name: tidyName(t.name), type: t.type || t.subtype || null, affinity: t.query && t.query.affinity != null ? round(t.query.affinity, 3) : null }; }
 
 // ---------- Workers AI ----------
 async function llmStream(env, messages, { model = MODEL_MAIN, max_tokens = 900, temperature = 0.4, onText = null } = {}) {
@@ -260,7 +250,7 @@ function derive(ev, deliverable) {
   const grades = GRADES.map(g => ({ id: g.id, name: g.name, score: scoreMoods(g.moods) })).sort((a, b) => b.score - a.score);
   const pairs = TYPE_PAIRS.map(p => ({ id: p.id, display: p.display, body: p.body, score: scoreMoods(p.moods) })).sort((a, b) => b.score - a.score);
   return {
-    tempo: { index: round(index, 2), cuts_per_min: cpm, avg_shot_s: avgShot, music_hits: tm.hits.slice(0, 8), media_hits: tv.hits.slice(0, 8), music_index: tm.index != null ? round(tm.index, 2) : null, media_index: tv.index != null ? round(tv.index, 2) : null, nudge: round(nudge, 2) },
+    tempo: { index: round(index, 2), cuts_per_min: cpm, avg_shot_s: avgShot, music_hits: mergeHits(tm.hits).slice(0, 8), media_hits: mergeHits(tv.hits).slice(0, 8), music_index: tm.index != null ? round(tm.index, 2) : null, media_index: tv.index != null ? round(tv.index, 2) : null, nudge: round(nudge, 2) },
     candidate_styles: styles.length ? styles : ["rhythmic_jump", "montage_match"],
     candidate_grades: grades.slice(0, 5), candidate_pairs: pairs.slice(0, 5),
     music_genres: musicTags.slice(0, 10).map(t => ({ name: t.name, weight: round(t.weight, 2) })),
@@ -285,7 +275,7 @@ async function runAgent(env, input, emit) {
   const step = (id, label, status = "running", extra = {}) => emit({ t: "step", id, label, status, tc: tc(Date.now() - t0), ...extra });
   const tool = (rec) => { trace.push(rec); emit({ t: "tool", tc: tc(Date.now() - t0), ...rec }); };
   const think = (text) => emit({ t: "think", tc: tc(Date.now() - t0), text });
-  const q = new Qloo(env.QLOO_MOCK === "1" ? "mock" : env.QLOO_API_KEY, tool);
+  const q = new Qloo(env.QLOO_API_KEY, tool);
   const brandIn = String(input.brand || "").trim().slice(0, 120);
   const notes = String(input.notes || "").trim().slice(0, 1200);
   const delKey = DELIVERABLES[input.deliverable] ? input.deliverable : "30s_ad";
@@ -507,7 +497,7 @@ async function runMatch(env, input, emit) {
   const t0 = Date.now(); const trace = [];
   const tool = (rec) => { trace.push(rec); emit && emit({ t: "tool", tc: tc(Date.now() - t0), ...rec }); };
   const think = (text) => emit && emit({ t: "think", tc: tc(Date.now() - t0), text });
-  const q = new Qloo(env.QLOO_MOCK === "1" ? "mock" : env.QLOO_API_KEY, tool);
+  const q = new Qloo(env.QLOO_API_KEY, tool);
   const signal = (input.signal || []).filter(Boolean).slice(0, 5);
   const refs = String(input.reel || "").split(/[,\n;]+/).map(s => s.trim()).filter(Boolean).slice(0, 8);
   if (!signal.length) throw Object.assign(new Error("run a brief first"), { status: 400 });
@@ -538,7 +528,8 @@ async function runMatch(env, input, emit) {
     return { type: t.split(":").pop().replace("_", " "), score: mx ? round(mn / mx, 3) : 0, shared: shared.slice(0, 6), brand_only: [...A.values()].filter(e => !B.has(e.id)).slice(0, 4).map(e => e.name), editor_only: [...B.values()].filter(e => !A.has(e.id)).slice(0, 4).map(e => e.name) };
   });
   // tag-level overlap (taste vocabulary)
-  const [ta, tb] = await Promise.all([q.insights("urn:tag", signal, {}, 30, "brand taste tags").catch(() => ({ tags: [] })), q.insights("urn:tag", eids, {}, 30, "editor taste tags").catch(() => ({ tags: [] }))]);
+  const TT = { "filter.tag.types": "urn:tag:keyword:media,urn:tag:genre:media,urn:tag:genre:music,urn:tag:genre:brand,urn:tag:style,urn:tag:audience" };
+  const [ta, tb] = await Promise.all([q.insights("urn:tag", signal, TT, 30, "brand taste tags").catch(() => ({ tags: [] })), q.insights("urn:tag", eids, TT, 30, "editor taste tags").catch(() => ({ tags: [] }))]);
   const TA = new Set((ta.tags || []).map(t => t.id)), TB = new Set((tb.tags || []).map(t => t.id));
   const sharedTags = (ta.tags || []).filter(t => TB.has(t.id)).map(t => t.name).slice(0, 10);
   const tagScore = (TA.size || TB.size) ? round([...TA].filter(x => TB.has(x)).length / new Set([...TA, ...TB]).size, 3) : 0;
@@ -584,7 +575,7 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     if (url.pathname.startsWith("/api/")) {
-      if ((!env.QLOO_API_KEY || env.QLOO_API_KEY === "placeholder") && env.QLOO_MOCK !== "1") { if (url.pathname !== "/api/health") return json({ error: "Qloo key not configured on this deployment yet" }, 503, CORS); }
+      if (!env.QLOO_API_KEY || env.QLOO_API_KEY === "placeholder") { if (url.pathname !== "/api/health") return json({ error: "Qloo key not configured on this deployment yet" }, 503, CORS); }
       try {
         if (url.pathname === "/api/health") return json({ ok: true, version: VERSION, qloo: !!env.QLOO_API_KEY && env.QLOO_API_KEY !== "placeholder", ai: !!env.AI, libraries: { grades: GRADES.length, type_pairs: TYPE_PAIRS.length, edit_styles: EDIT_STYLES.length } }, 200, CORS);
         if (url.pathname === "/api/libraries") return json({ grades: GRADES, type_pairs: TYPE_PAIRS, edit_styles: EDIT_STYLES, deliverables: DELIVERABLES }, 200, { ...CORS, "cache-control": "public, max-age=3600" });
