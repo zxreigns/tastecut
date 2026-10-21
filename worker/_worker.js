@@ -5,7 +5,7 @@
 const QLOO_BASE = "https://hackathon.api.qloo.com";
 const MODEL_MAIN = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MODEL_SMALL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const VERSION = "0.9.20";
+const VERSION = "0.9.21";
 
 // ---------- craft knowledge (deterministic, explainable) ----------
 // tempo weights: 0 = glacial, 1 = frantic. Keys are matched as substrings of Qloo tag ids/names (lowercase).
@@ -383,7 +383,7 @@ async function runAgent(env, input, emit) {
   step("write", "Brief written", "done", { models: writeModel });
 
   const out = {
-    version: VERSION, id: await sha(JSON.stringify({ brandIn, notes, delKey, v: VERSION })), created: new Date().toISOString(), elapsed_ms: Date.now() - t0,
+    version: VERSION, degraded: !craft.j || !musicRefs.j, id: await sha(JSON.stringify({ brandIn, notes, delKey, v: VERSION })), created: new Date().toISOString(), elapsed_ms: Date.now() - t0,
     input: { brand: brandIn, notes, deliverable },
     plan, resolved: { via: resolvedVia, brand, proxies, signal },
     evidence: { ...ev, mood_words: undefined, category: undefined }, derived: { ...d, bpm }, brief, models: { read: llmMeta.read, write: writeModel }, qloo_calls: q.calls, trace
@@ -582,7 +582,7 @@ export default {
         if (url.pathname === "/api/brief" && request.method === "POST") {
           const input = await request.json();
           const cacheKey = await sha(JSON.stringify({ b: lc(input.brand || "").trim(), n: String(input.notes || "").trim(), d: input.deliverable || "30s_ad", v: VERSION }));
-          if (!input.fresh) { const hit = await cacheGet(cacheKey); if (hit) return sse(async (emit) => { emit({ t: "step", id: "cache", label: "Brief found in the room's cache (same brand, notes and deliverable)", status: "done", tc: "00:00:00" }); for (const r of (hit.trace || [])) emit({ t: "tool", cached: true, ...r }); emit({ t: "brief", data: { ...hit, cached: true } }); emit({ t: "done" }); }); }
+          if (!input.fresh) { const hit = await cacheGet(cacheKey); if (hit && !hit.degraded) return sse(async (emit) => { emit({ t: "step", id: "cache", label: "Brief found in the room's cache (same brand, notes and deliverable)", status: "done", tc: "00:00:00" }); for (const r of (hit.trace || [])) emit({ t: "tool", cached: true, ...r }); emit({ t: "brief", data: { ...hit, cached: true } }); emit({ t: "done" }); }); }
           return sse(async (emit) => { const out = await runAgent(env, input, emit); out.id = cacheKey; ctx.waitUntil(cachePut(cacheKey, out)); emit({ t: "brief", data: out }); emit({ t: "done" }); });
         }
         if (url.pathname === "/api/match" && request.method === "POST") { const input = await request.json(); return sse(async (emit) => { const out = await runMatch(env, input, emit); emit({ t: "match", data: out }); emit({ t: "done" }); }); }
