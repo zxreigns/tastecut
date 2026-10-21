@@ -5,7 +5,7 @@
 const QLOO_BASE = "https://hackathon.api.qloo.com";
 const MODEL_MAIN = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MODEL_SMALL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const VERSION = "0.9.19";
+const VERSION = "0.9.20";
 
 // ---------- craft knowledge (deterministic, explainable) ----------
 // tempo weights: 0 = glacial, 1 = frantic. Keys are matched as substrings of Qloo tag ids/names (lowercase).

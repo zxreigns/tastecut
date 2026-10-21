@@ -18,6 +18,7 @@ code{font-family:var(--mono);font-size:.85em;color:var(--accent);background:rgba
 
 /* top */
 html{scroll-padding-top:88px}
+#tl-meta{text-align:right}
 #room,#brief,section[id]{scroll-margin-top:88px}
 .top{position:sticky;top:0;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:14px 24px;background:linear-gradient(var(--bg) 70%,transparent);backdrop-filter:blur(6px)}
 .wordmark{text-decoration:none;font-family:var(--display);font-size:30px;letter-spacing:-.02em;line-height:1}
@@ -96,7 +97,7 @@ textarea{resize:vertical;min-height:58px}
 .confidence{color:var(--ink3)}
 
 .timeline-wrap{background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:14px 16px 12px;margin-bottom:22px;animation:fadeup .6s var(--ease) .1s both}
-.tl-head{display:flex;justify-content:space-between;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);margin-bottom:12px}
+.tl-head{display:flex;justify-content:space-between;gap:16px;align-items:baseline;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);margin-bottom:12px}
 .timeline{position:relative;height:150px;overflow:hidden;border-radius:10px;background:#0E0E10;border:1px solid var(--hair)}
 .tl-frames{position:absolute;left:0;right:0;top:0;height:62px;display:flex;gap:2px;padding:4px 0 0}
 .tl-frames i{flex:1;border-radius:3px;opacity:.9}
